@@ -8,14 +8,29 @@ router.use(authenticateToken);
 
 router.get('/', async (req, res) => {
   try {
-    const { search, category } = req.query;
-    let query = `SELECT e.*, p.name as project_name FROM expenses e LEFT JOIN projects p ON e.project_id = p.id WHERE e.user_id = $1`;
+    const { search, category, page, limit } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (pageNum - 1) * limitNum;
+
+    let base = `FROM expenses e LEFT JOIN projects p ON e.project_id = p.id WHERE e.user_id = $1`;
     const params = [req.user.id];
-    if (search) { query += ` AND e.description ILIKE $${params.length + 1}`; params.push(`%${search}%`); }
-    if (category) { query += ` AND e.category = $${params.length + 1}`; params.push(category); }
-    query += ' ORDER BY e.date DESC';
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    if (search) { base += ` AND e.description ILIKE $${params.length + 1}`; params.push(`%${search}%`); }
+    if (category) { base += ` AND e.category = $${params.length + 1}`; params.push(category); }
+
+    const countResult = await pool.query(`SELECT COUNT(*) ${base}`, params);
+    const total = parseInt(countResult.rows[0].count);
+
+    const dataParams = [...params, limitNum, offset];
+    const result = await pool.query(
+      `SELECT e.*, p.name as project_name ${base} ORDER BY e.date DESC LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`,
+      dataParams
+    );
+
+    res.json({
+      data: result.rows,
+      pagination: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) },
+    });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

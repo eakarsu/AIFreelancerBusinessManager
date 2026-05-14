@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import pool from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { aiRateLimiter } from '../middleware/rateLimiter.js';
 import { predictPayment, generateInvoice } from '../services/openrouter.js';
 
 const router = Router();
@@ -8,14 +9,29 @@ router.use(authenticateToken);
 
 router.get('/', async (req, res) => {
   try {
-    const { search, status } = req.query;
-    let query = `SELECT i.*, c.name as client_name, p.name as project_name FROM invoices i LEFT JOIN clients c ON i.client_id = c.id LEFT JOIN projects p ON i.project_id = p.id WHERE i.user_id = $1`;
+    const { search, status, page, limit } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (pageNum - 1) * limitNum;
+
+    let baseQuery = `FROM invoices i LEFT JOIN clients c ON i.client_id = c.id LEFT JOIN projects p ON i.project_id = p.id WHERE i.user_id = $1`;
     const params = [req.user.id];
-    if (search) { query += ` AND (i.invoice_number ILIKE $${params.length + 1} OR c.name ILIKE $${params.length + 1})`; params.push(`%${search}%`); }
-    if (status) { query += ` AND i.status = $${params.length + 1}`; params.push(status); }
-    query += ' ORDER BY i.created_at DESC';
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    if (search) { baseQuery += ` AND (i.invoice_number ILIKE $${params.length + 1} OR c.name ILIKE $${params.length + 1})`; params.push(`%${search}%`); }
+    if (status) { baseQuery += ` AND i.status = $${params.length + 1}`; params.push(status); }
+
+    const countResult = await pool.query(`SELECT COUNT(*) ${baseQuery}`, params);
+    const total = parseInt(countResult.rows[0].count);
+
+    const dataParams = [...params, limitNum, offset];
+    const result = await pool.query(
+      `SELECT i.*, c.name as client_name, p.name as project_name ${baseQuery} ORDER BY i.created_at DESC LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`,
+      dataParams
+    );
+
+    res.json({
+      data: result.rows,
+      pagination: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) },
+    });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -32,11 +48,27 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { client_id, project_id, invoice_number, amount, tax, status, due_date, line_items } = req.body;
+    if (!client_id || !amount) return res.status(400).json({ error: 'client_id and amount are required' });
+
     const result = await pool.query(
       'INSERT INTO invoices (user_id, client_id, project_id, invoice_number, amount, tax, status, due_date, line_items) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',
       [req.user.id, client_id, project_id, invoice_number, amount, tax, status || 'draft', due_date, line_items]
     );
-    res.json(result.rows[0]);
+    const invoice = result.rows[0];
+
+    // Fire-and-forget AI payment prediction
+    (async () => {
+      try {
+        const clientRow = client_id ? (await pool.query('SELECT * FROM clients WHERE id = $1', [client_id])).rows[0] : null;
+        const analysis = await predictPayment(invoice, clientRow);
+        await pool.query(
+          'UPDATE invoices SET ai_payment_prediction=$1, ai_notes=$2 WHERE id=$3',
+          [analysis.payment_probability, JSON.stringify(analysis), invoice.id]
+        );
+      } catch (e) { console.error(e); }
+    })();
+
+    res.json(invoice);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -60,7 +92,7 @@ router.delete('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/:id/ai-predict', async (req, res) => {
+router.post('/:id/ai-predict', aiRateLimiter, async (req, res) => {
   try {
     const inv = await pool.query('SELECT i.*, c.name as client_name FROM invoices i LEFT JOIN clients c ON i.client_id = c.id WHERE i.id = $1 AND i.user_id = $2', [req.params.id, req.user.id]);
     if (inv.rows.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -71,7 +103,7 @@ router.post('/:id/ai-predict', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/ai-generate', async (req, res) => {
+router.post('/ai-generate', aiRateLimiter, async (req, res) => {
   try {
     const { project_id } = req.body;
     const project = await pool.query('SELECT p.*, c.name as client_name FROM projects p LEFT JOIN clients c ON p.client_id = c.id WHERE p.id = $1 AND p.user_id = $2', [project_id, req.user.id]);

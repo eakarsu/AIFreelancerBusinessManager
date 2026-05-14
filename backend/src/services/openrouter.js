@@ -7,9 +7,9 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '..', '..', '..', '.env') });
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-haiku-4.5';
+const MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-3-5-sonnet-20241022';
 
-async function callAI(systemPrompt, userMessage) {
+export async function callAI(systemPrompt, userMessage) {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
