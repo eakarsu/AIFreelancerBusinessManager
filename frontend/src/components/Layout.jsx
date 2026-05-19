@@ -15,6 +15,7 @@ const navItems = [
   { path: '/communications', label: 'Communications', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
   { path: '/revenue-reports', label: 'Revenue & Reports', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
   { path: '/goals', label: 'Goals & Milestones', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
+  { path: '/custom-views', label: 'Freelance Views', icon: 'M4 6h16M4 10h16M4 14h16M4 18h16' },
 ];
 
 const aiNavItem = {

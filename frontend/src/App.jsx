@@ -17,6 +17,7 @@ import Goals from './pages/Goals';
 import AICenter from './pages/AICenter';
 import AIBusinessIntelligence from './pages/AIBusinessIntelligence';
 import Backlog from './pages/Backlog'; // Apply pass 5
+import CustomViewsPage from './pages/CustomViewsPage';
 
 // === Batch 04 Gaps & Frontend Mounts ===
 import CfAgenticProposalGenerationCraftingCus from './pages/CfAgenticProposalGenerationCraftingCus';
@@ -62,6 +63,7 @@ function AppRoutes() {
         <Route path="ai-center" element={<AICenter />} />
         <Route path="ai-business-intelligence" element={<AIBusinessIntelligence />} />
         <Route path="backlog" element={<Backlog />} />{/* Apply pass 5 */}
+        <Route path="custom-views" element={<CustomViewsPage />} />
       </Route>
     
           {/* // === Batch 04 Gaps & Frontend Mounts === */}

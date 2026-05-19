@@ -10,6 +10,7 @@ import route_gap_no_client_feedback_review_system from '../routes/gap-no-client-
 import route_gap_no_notification_engine_emailsms_reminder from '../routes/gap-no-notification-engine-emailsms-reminder.js';
 import route_gap_no_portfolio_case_study_module from '../routes/gap-no-portfolio-case-study-module.js';
 import route_gap_no_subscriptionplan_management_for_the_f from '../routes/gap-no-subscriptionplan-management-for-the-f.js';
+import customViewsRoute from '../routes/customViews.js';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -83,6 +84,14 @@ app.use('/api/gap-no-client-feedback-review-system', route_gap_no_client_feedbac
 app.use('/api/gap-no-notification-engine-emailsms-reminder', route_gap_no_notification_engine_emailsms_reminder);
 app.use('/api/gap-no-portfolio-case-study-module', route_gap_no_portfolio_case_study_module);
 app.use('/api/gap-no-subscriptionplan-management-for-the-f', route_gap_no_subscriptionplan_management_for_the_f);
+
+// Custom freelance views — mounted BEFORE the 404 handler so all 4 endpoints respond
+app.use('/api/custom-views', customViewsRoute);
+
+// 404 handler for unknown /api routes
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'Not Found', path: req.originalUrl });
+});
 
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
