@@ -50,7 +50,7 @@ export default function GapNoSubscriptionplanManagementForTheF() {
           disabled={loading}
           style={{ marginTop: '0.75rem', padding: '0.6rem 1.2rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: loading ? 'not-allowed' : 'pointer' }}
         >
-          {loading ? 'Processing...' : 'Run No subscription/plan management for the freelancer's own Saa'}
+          {loading ? 'Processing...' : "Run No subscription/plan management for the freelancer's own Saa"}
         </button>
       </form>
       {error && <div style={{ background: '#fee', color: '#900', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem' }}>{error}</div>}

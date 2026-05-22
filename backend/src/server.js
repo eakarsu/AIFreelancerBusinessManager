@@ -40,6 +40,7 @@ import vendorsRoutes from './routes/vendors.js';
 import paymentsRoutes from './routes/payments.js';
 import fxRatesRoutes from './routes/fxRates.js';
 import marketingPipelineRoutes from './routes/marketingPipeline.js';
+import scopeCreepMarginGuardRoutes from './routes/scopeCreepMarginGuard.js';
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 3001;
@@ -70,6 +71,7 @@ app.use('/api/vendors', vendorsRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/fx-rates', fxRatesRoutes);
 app.use('/api/marketing', marketingPipelineRoutes);
+app.use('/api/scope-creep-margin-guard', scopeCreepMarginGuardRoutes);
 import('./routes/skillDemandMarketplace.js').then(m => app.use('/api/skill-demand', m.default));
 import('./routes/fxHedgingAdvisor.js').then(m => app.use('/api/fx-hedging', m.default));
 

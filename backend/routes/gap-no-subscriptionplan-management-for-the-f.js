@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
     if (!apiKey) {
       const fallback = {
         feature: 'gap-no-subscriptionplan-management-for-the-f',
-        title: 'No subscription/plan management for the freelancer\',
+        title: 'No subscription/plan management for the freelancer',
         result: 'Configure OPENROUTER_API_KEY for live AI output. Stub returning echo.',
         input: userInput,
       };
@@ -40,7 +40,7 @@ router.post('/', async (req, res) => {
       return res.json(fallback);
     }
 
-    const prompt = `You are an expert assistant for the feature "${'No subscription/plan management for the freelancer\'}". Provide a structured, actionable response.\nUser input: ${userInput}\nContext: ${JSON.stringify(ctx)}`;
+    const prompt = `You are an expert assistant for the feature "${'No subscription/plan management for the freelancer'}". Provide a structured, actionable response.\nUser input: ${userInput}\nContext: ${JSON.stringify(ctx)}`;
     const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
     });
     const aiData = await aiRes.json();
     const content = (aiData && aiData.choices && aiData.choices[0] && aiData.choices[0].message && aiData.choices[0].message.content) || 'No response';
-    const out = { feature: 'gap-no-subscriptionplan-management-for-the-f', title: 'No subscription/plan management for the freelancer\', result: content };
+    const out = { feature: 'gap-no-subscriptionplan-management-for-the-f', title: 'No subscription/plan management for the freelancer', result: content };
     if (pool) { try { await pool.query('INSERT INTO gap_features (slug, input, output) VALUES ($1, $2, $3)', ['gap-no-subscriptionplan-management-for-the-f', { input: userInput, ctx }, out]); } catch (e) {} }
     res.json(out);
   } catch (err) {

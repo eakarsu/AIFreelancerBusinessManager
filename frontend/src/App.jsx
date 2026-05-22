@@ -18,6 +18,7 @@ import AICenter from './pages/AICenter';
 import AIBusinessIntelligence from './pages/AIBusinessIntelligence';
 import Backlog from './pages/Backlog'; // Apply pass 5
 import CustomViewsPage from './pages/CustomViewsPage';
+import ScopeCreepMarginGuard from './pages/ScopeCreepMarginGuard';
 
 // === Batch 04 Gaps & Frontend Mounts ===
 import CfAgenticProposalGenerationCraftingCus from './pages/CfAgenticProposalGenerationCraftingCus';
@@ -37,6 +38,9 @@ import GapNoNotificationEngineEmailsmsReminder from './pages/GapNoNotificationEn
 import GapNoPortfolioCaseStudyModule from './pages/GapNoPortfolioCaseStudyModule';
 import GapNoSubscriptionplanManagementForTheF from './pages/GapNoSubscriptionplanManagementForTheF';
 
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? children : <Navigate to="/login" />;
@@ -46,6 +50,9 @@ function AppRoutes() {
   const { isAuthenticated } = useAuth();
   return (
     <Routes>
+        <Route path="/codex/custom-viz" element={<ProtectedRoute><CodexCustomVizFeature /></ProtectedRoute>} />
+        <Route path="/codex/operations" element={<ProtectedRoute><CodexOperationsFeature /></ProtectedRoute>} />
+
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
@@ -64,6 +71,7 @@ function AppRoutes() {
         <Route path="ai-business-intelligence" element={<AIBusinessIntelligence />} />
         <Route path="backlog" element={<Backlog />} />{/* Apply pass 5 */}
         <Route path="custom-views" element={<CustomViewsPage />} />
+        <Route path="scope-creep-margin-guard" element={<ScopeCreepMarginGuard />} />
       </Route>
     
           {/* // === Batch 04 Gaps & Frontend Mounts === */}
