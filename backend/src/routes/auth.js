@@ -13,7 +13,7 @@ router.post('/register', async (req, res) => {
       'INSERT INTO users (email, password, name) VALUES ($1, $2, $3) RETURNING id, email, name, role',
       [email, hashedPassword, name]
     );
-    const token = jwt.sign({ id: result.rows[0].id, email }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ id: result.rows[0].id, email, role: result.rows[0].role || 'user' }, process.env.JWT_SECRET, { expiresIn: '24h' });
     res.json({ user: result.rows[0], token });
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Email already exists' });
@@ -29,7 +29,7 @@ router.post('/login', async (req, res) => {
     const user = result.rows[0];
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role || 'user' }, process.env.JWT_SECRET, { expiresIn: '24h' });
     res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role }, token });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -37,6 +37,9 @@ router.post('/login', async (req, res) => {
 });
 
 router.get('/demo-credentials', (req, res) => {
+  if (process.env.NODE_ENV === 'production' || process.env.EXPOSE_DEMO_CREDENTIALS !== 'true') {
+    return res.status(404).json({ error: 'Not found' });
+  }
   res.json({
     email: process.env.DEMO_EMAIL || 'demo@freelancer.com',
     password: process.env.DEMO_PASSWORD || 'demo123456',

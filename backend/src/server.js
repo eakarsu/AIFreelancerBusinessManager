@@ -1,15 +1,4 @@
 
-// === Batch 04 Gaps & Frontend Mounts ===
-import route_gap_no_project_profitability_analysis_endpoi from '../routes/gap-no-project-profitability-analysis-endpoi.js';
-import route_gap_no_rate_optimization_endpoint_suggesting from '../routes/gap-no-rate-optimization-endpoint-suggesting.js';
-import route_gap_no_client_churn_prediction from '../routes/gap-no-client-churn-prediction.js';
-import route_gap_no_skill_gap_or_upskilling_recommender from '../routes/gap-no-skill-gap-or-upskilling-recommender.js';
-import route_gap_no_contract_risk_nlp_scanner from '../routes/gap-no-contract-risk-nlp-scanner.js';
-import route_gap_limited_file_upload_no_multerobject_stor from '../routes/gap-limited-file-upload-no-multerobject-stor.js';
-import route_gap_no_client_feedback_review_system from '../routes/gap-no-client-feedback-review-system.js';
-import route_gap_no_notification_engine_emailsms_reminder from '../routes/gap-no-notification-engine-emailsms-reminder.js';
-import route_gap_no_portfolio_case_study_module from '../routes/gap-no-portfolio-case-study-module.js';
-import route_gap_no_subscriptionplan_management_for_the_f from '../routes/gap-no-subscriptionplan-management-for-the-f.js';
 import customViewsRoute from '../routes/customViews.js';
 import express from 'express';
 import cors from 'cors';
@@ -41,6 +30,11 @@ import paymentsRoutes from './routes/payments.js';
 import fxRatesRoutes from './routes/fxRates.js';
 import marketingPipelineRoutes from './routes/marketingPipeline.js';
 import scopeCreepMarginGuardRoutes from './routes/scopeCreepMarginGuard.js';
+import governedBusinessRoutes from './routes/governedBusiness.js';
+
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET must be configured with at least 32 characters');
+}
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 3001;
@@ -74,18 +68,7 @@ app.use('/api/marketing', marketingPipelineRoutes);
 app.use('/api/scope-creep-margin-guard', scopeCreepMarginGuardRoutes);
 import('./routes/skillDemandMarketplace.js').then(m => app.use('/api/skill-demand', m.default));
 import('./routes/fxHedgingAdvisor.js').then(m => app.use('/api/fx-hedging', m.default));
-
-
-app.use('/api/gap-no-project-profitability-analysis-endpoi', route_gap_no_project_profitability_analysis_endpoi);
-app.use('/api/gap-no-rate-optimization-endpoint-suggesting', route_gap_no_rate_optimization_endpoint_suggesting);
-app.use('/api/gap-no-client-churn-prediction', route_gap_no_client_churn_prediction);
-app.use('/api/gap-no-skill-gap-or-upskilling-recommender', route_gap_no_skill_gap_or_upskilling_recommender);
-app.use('/api/gap-no-contract-risk-nlp-scanner', route_gap_no_contract_risk_nlp_scanner);
-app.use('/api/gap-limited-file-upload-no-multerobject-stor', route_gap_limited_file_upload_no_multerobject_stor);
-app.use('/api/gap-no-client-feedback-review-system', route_gap_no_client_feedback_review_system);
-app.use('/api/gap-no-notification-engine-emailsms-reminder', route_gap_no_notification_engine_emailsms_reminder);
-app.use('/api/gap-no-portfolio-case-study-module', route_gap_no_portfolio_case_study_module);
-app.use('/api/gap-no-subscriptionplan-management-for-the-f', route_gap_no_subscriptionplan_management_for_the_f);
+app.use('/api/business-workflow', governedBusinessRoutes);
 
 // Custom freelance views — mounted BEFORE the 404 handler so all 4 endpoints respond
 app.use('/api/custom-views', customViewsRoute);
