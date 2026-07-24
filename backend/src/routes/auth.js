@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/database.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -33,6 +34,19 @@ router.post('/login', async (req, res) => {
     res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role }, token });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, email, name, role, created_at FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: 'User not found' });
+    res.json({ user: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Unable to load session user' });
   }
 });
 
