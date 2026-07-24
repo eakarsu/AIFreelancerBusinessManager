@@ -17,8 +17,8 @@ export default function Login() {
       setEmail(creds.email);
       setPassword(creds.password);
     } catch {
-      setEmail('demo@freelancer.com');
-      setPassword('demo123456');
+      setEmail(import.meta.env.VITE_DEMO_EMAIL || '');
+      setPassword(import.meta.env.VITE_DEMO_PASSWORD || '');
     }
   };
 
