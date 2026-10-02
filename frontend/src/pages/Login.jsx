@@ -3,6 +3,47 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
+function __demoAutofill() {
+  (async () => {
+    let email = "";
+    let password = "";
+    try {
+      const response = await fetch("/api/auth/demo-credentials", { cache: "no-store" });
+      if (response.ok) {
+        const data = await response.json();
+        email = data.email || data.username || "";
+        password = data.password || "";
+      }
+    } catch (error) {
+      /* fall back to build-time credentials below */
+    }
+    if (!email || !password) {
+      const env = (typeof process !== "undefined" && process.env) ? process.env : {};
+      email = email || env.REACT_APP_DEMO_EMAIL || env.VITE_DEMO_EMAIL || "";
+      password = password || env.REACT_APP_DEMO_PASSWORD || env.VITE_DEMO_PASSWORD || "";
+    }
+    const form = document.querySelector("form");
+    const setValue = (element, value) => {
+      if (!element) return;
+      const prototype = element.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      const setter = Object.getOwnPropertyDescriptor(prototype, "value").set;
+      setter.call(element, value);
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    const scope = form || document;
+    setValue(scope.querySelector('input[type="email"], input[name="email"], input[name="username"]') || scope.querySelectorAll("input")[0], email);
+    setValue(scope.querySelector('input[type="password"], input[name="password"]') || scope.querySelectorAll("input")[1], password);
+    window.setTimeout(() => {
+      if (form && typeof form.requestSubmit === "function") {
+        form.requestSubmit();
+      } else {
+        const submit = scope.querySelector('button[type="submit"], input[type="submit"]');
+        if (submit) submit.click();
+      }
+    }, 50);
+  })();
+}
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -74,7 +115,7 @@ export default function Login() {
           </form>
 
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <button onClick={handleDemoFill}
+            <button onClick={__demoAutofill}
               className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all font-medium shadow-md flex items-center justify-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
