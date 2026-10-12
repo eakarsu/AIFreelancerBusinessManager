@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
 export default function Login() {
+  const demoLoginLock = useRef(false);
+  const [demoLoginBusy, setDemoLoginBusy] = useState(false);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -11,29 +14,42 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleDemoFill = async () => {
-    try {
-      const creds = await api.getDemoCredentials();
-      setEmail(creds.email);
-      setPassword(creds.password);
-    } catch {
-      setEmail(import.meta.env.VITE_DEMO_EMAIL || '');
-      setPassword(import.meta.env.VITE_DEMO_PASSWORD || '');
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event, credentials) => {
+    event?.preventDefault();
     setLoading(true);
     setError('');
     try {
-      const data = await api.login({ email, password });
+      const data = await api.login({ email: credentials?.email ?? email, password: credentials?.password ?? password });
       login(data.user, data.token);
       navigate('/');
     } catch (err) {
       setError(err.message || 'Login failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    if (demoLoginLock.current) return;
+    demoLoginLock.current = true;
+    setDemoLoginBusy(true);
+    setError('');
+    try {
+      const localCredentials = import.meta.env.VITE_ENABLE_DEMO_CREDENTIAL_AUTOFILL === 'true'
+        ? { email: import.meta.env.VITE_DEMO_EMAIL, password: import.meta.env.VITE_DEMO_PASSWORD }
+        : null;
+      const credentials = localCredentials?.email && localCredentials?.password
+        ? localCredentials
+        : await api.getDemoCredentials();
+      if (!credentials?.email || !credentials?.password) throw new Error('Demo credentials are unavailable.');
+      setEmail(credentials.email);
+      setPassword(credentials.password);
+      await handleSubmit(null, credentials);
+    } catch (err) {
+      setError(err.message || 'Demo credentials are unavailable. Try again shortly.');
+    } finally {
+      demoLoginLock.current = false;
+      setDemoLoginBusy(false);
     }
   };
 
@@ -74,14 +90,18 @@ export default function Login() {
           </form>
 
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <button onClick={handleDemoFill}
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all font-medium shadow-md flex items-center justify-center gap-2">
+            <button
+              type="button"
+              disabled={demoLoginBusy || loading}
+              onClick={handleDemoLogin}
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all font-medium shadow-md flex items-center justify-center gap-2 disabled:opacity-60"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              Auto Fill Demo Credentials
+              {demoLoginBusy ? 'Logging in as Demo...' : 'Log in as Demo'}
             </button>
-            <p className="text-center text-xs text-gray-500 mt-3">Click to auto-fill demo account credentials, then sign in</p>
+            <p className="text-center text-xs text-gray-500 mt-3">Uses the existing demo account when demo access is enabled.</p>
           </div>
         </div>
       </div>

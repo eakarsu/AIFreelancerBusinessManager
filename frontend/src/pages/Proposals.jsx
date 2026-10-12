@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import AIResponseDisplay from '../components/AIResponseDisplay';
+import AIResponseDisplay, { savedAIResult } from '../components/AIResponseDisplay';
 
 const statusColors = {
   accepted: 'bg-green-100 text-green-800',
@@ -181,7 +181,7 @@ export default function Proposals() {
             <button onClick={handleDelete} className="btn-danger">Delete</button>
             <button onClick={handleAI} className="btn-ai">AI Improve</button>
           </div>
-          <AIResponseDisplay data={aiResult} loading={aiLoading} title="AI Proposal Improvement" />
+          <AIResponseDisplay data={aiResult || savedAIResult(selectedItem)} loading={aiLoading} title={aiResult ? 'AI Proposal Improvement' : 'Saved AI Proposal Improvement'} />
         </div>
       )}
 

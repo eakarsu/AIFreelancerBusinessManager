@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import AIResponseDisplay from '../components/AIResponseDisplay';
+import AIResponseDisplay, { savedAIResult } from '../components/AIResponseDisplay';
 
 const categories = ['software', 'equipment', 'office', 'hosting', 'education', 'travel', 'fees', 'insurance', 'utilities', 'marketing', 'other'];
 
@@ -180,7 +180,7 @@ export default function Expenses() {
             <button onClick={handleDelete} className="btn-danger">Delete</button>
             <button onClick={handleAI} className="btn-ai">AI Categorize</button>
           </div>
-          <AIResponseDisplay data={aiResult} loading={aiLoading} title="AI Expense Categorization" />
+          <AIResponseDisplay data={aiResult || savedAIResult(selectedItem)} loading={aiLoading} title={aiResult ? 'AI Expense Categorization' : 'Saved AI Expense Categorization'} />
         </div>
       )}
 

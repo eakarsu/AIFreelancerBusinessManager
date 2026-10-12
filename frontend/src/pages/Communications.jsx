@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import AIResponseDisplay from '../components/AIResponseDisplay';
+import AIResponseDisplay, { savedAIResult } from '../components/AIResponseDisplay';
 
 const typeColors = {
   email: 'bg-blue-100 text-blue-800',
@@ -188,7 +188,7 @@ export default function Communications() {
             <button onClick={handleDelete} className="btn-danger">Delete</button>
             <button onClick={handleAIAnalyze} className="btn-ai">AI Analyze</button>
           </div>
-          <AIResponseDisplay data={aiResult} loading={aiLoading} title="AI Communication Analysis" />
+          <AIResponseDisplay data={aiResult || savedAIResult(selectedItem)} loading={aiLoading} title={aiResult ? 'AI Communication Analysis' : 'Saved AI Communication Analysis'} />
         </div>
       )}
 

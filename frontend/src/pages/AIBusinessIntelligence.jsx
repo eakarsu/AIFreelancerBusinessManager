@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import NativeAIControls from "../components/NativeAIControls.jsx";
+import { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import AIResponseDisplay from '../components/AIResponseDisplay';
 
@@ -71,7 +72,7 @@ const TABS = [
     description: 'Paste contract text or use a saved contract id; AI flags risky clauses (not legal advice).',
     gradient: 'from-rose-500 to-red-600',
     fields: [
-      { name: 'contract_id', label: 'Contract ID (optional)', type: 'number' },
+      { name: 'contract_id', label: 'Saved contract (optional)', type: 'record' },
       { name: 'contract_text', label: 'Contract text (paste, optional)', type: 'textarea', placeholder: 'Paste contract terms here' },
     ],
   },
@@ -115,6 +116,17 @@ export default function AIBusinessIntelligence() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [contracts, setContracts] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    api.getAll('contracts').then((data) => {
+      if (active) setContracts(Array.isArray(data) ? data : data.data || []);
+    }).catch(() => {
+      if (active) setContracts([]);
+    });
+    return () => { active = false; };
+  }, []);
 
   const tab = TABS.find((t) => t.id === activeTab);
 
@@ -147,7 +159,7 @@ export default function AIBusinessIntelligence() {
   };
 
   return (
-    <div className="space-y-6">
+    <NativeAIControls busy={loading} context="FreelancerBusinessManager"><div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">AI Business Intelligence</h1>
         <p className="text-gray-500 mt-1">Profitability, rate, and churn analysis powered by the new <code>/api/ai</code> endpoints.</p>
@@ -176,15 +188,26 @@ export default function AIBusinessIntelligence() {
             <div key={f.name} className={f.type === 'textarea' ? 'md:col-span-2' : ''}>
               <label className="block text-xs font-medium text-gray-700 mb-1">{f.label}</label>
               {f.type === 'textarea' ? (
-                <textarea
+                <textarea data-ai-field={f.name}
                   rows={5}
                   value={formValues[tab.id][f.name] ?? ''}
                   placeholder={f.placeholder || ''}
                   onChange={(e) => updateField(tab.id, f.name, e.target.value)}
                   className="input-field w-full"
                 />
+              ) : f.type === 'record' ? (
+                <select
+                  data-ai-field={f.name}
+                  value={formValues[tab.id][f.name] ?? ''}
+                  disabled={!contracts.length}
+                  onChange={(e) => updateField(tab.id, f.name, e.target.value)}
+                  className="select-field w-full"
+                >
+                  <option value="">{contracts.length ? 'Select a saved contract' : 'No saved contracts available'}</option>
+                  {contracts.map((contract) => <option key={contract.id} value={contract.id}>{contract.title || `Contract #${contract.id}`}</option>)}
+                </select>
               ) : (
-                <input
+                <input data-ai-field={f.name}
                   type={f.type || 'text'}
                   value={formValues[tab.id][f.name] ?? ''}
                   placeholder={f.placeholder || ''}
@@ -214,6 +237,6 @@ export default function AIBusinessIntelligence() {
       {(result || loading) && (
         <AIResponseDisplay data={result} loading={loading} title={tab.label} />
       )}
-    </div>
+    </div></NativeAIControls>
   );
 }

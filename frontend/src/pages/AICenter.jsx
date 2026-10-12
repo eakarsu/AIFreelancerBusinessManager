@@ -1,3 +1,4 @@
+import NativeAIControls from "../components/NativeAIControls.jsx";
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
 import AIResponseDisplay from '../components/AIResponseDisplay';
@@ -143,7 +144,7 @@ export default function AICenter() {
   };
 
   return (
-    <div className="space-y-8">
+    <NativeAIControls busy={chatLoading} context="FreelancerBusinessManager"><div className="space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">AI Center</h1>
@@ -195,7 +196,9 @@ export default function AICenter() {
                     ? 'bg-red-50 text-red-700 border border-red-200 rounded-bl-sm'
                     : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm'
               }`}>
-                {msg.content}
+                {msg.role === 'assistant' && !msg.error
+                  ? <AIResponseDisplay data={msg.data || msg.content} title="AI response" />
+                  : msg.content}
               </div>
             </div>
           ))}
@@ -213,7 +216,7 @@ export default function AICenter() {
           <div ref={chatEndRef} />
         </div>
         <form onSubmit={handleChat} className="border-t border-gray-200 p-3 flex gap-2">
-          <input
+          <input data-ai-field={"chatInput"}
             type="text"
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
@@ -291,6 +294,6 @@ export default function AICenter() {
           </div>
         </div>
       )}
-    </div>
+    </div></NativeAIControls>
   );
 }

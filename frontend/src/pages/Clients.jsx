@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import AIResponseDisplay from '../components/AIResponseDisplay';
+import AIResponseDisplay, { savedAIResult } from '../components/AIResponseDisplay';
 
 const statusColors = {
   active: 'bg-green-100 text-green-800',
@@ -166,7 +166,7 @@ export default function Clients() {
             <button onClick={handleDelete} className="btn-danger">Delete</button>
             <button onClick={handleAI} className="btn-ai">AI Health Score</button>
           </div>
-          <AIResponseDisplay data={aiResult} loading={aiLoading} title="AI Client Health Score" />
+          <AIResponseDisplay data={aiResult || savedAIResult(selectedItem)} loading={aiLoading} title={aiResult ? 'AI Client Health Score' : 'Saved AI Client Health Score'} />
         </div>
       )}
 

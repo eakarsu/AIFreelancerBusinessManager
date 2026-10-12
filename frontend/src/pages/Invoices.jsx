@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import AIResponseDisplay from '../components/AIResponseDisplay';
+import AIResponseDisplay, { savedAIResult } from '../components/AIResponseDisplay';
 
 const statusColors = {
   paid: 'bg-green-100 text-green-800',
@@ -200,7 +200,7 @@ export default function Invoices() {
             <button onClick={handleDelete} className="btn-danger">Delete</button>
             <button onClick={handleAI} className="btn-ai">AI Predict Payment</button>
           </div>
-          <AIResponseDisplay data={aiResult} loading={aiLoading} title="AI Payment Prediction" />
+          <AIResponseDisplay data={aiResult || savedAIResult(selectedItem)} loading={aiLoading} title={aiResult ? 'AI Payment Prediction' : 'Saved AI Payment Prediction'} />
         </div>
       )}
 

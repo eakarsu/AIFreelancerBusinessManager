@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import AIResponseDisplay from '../components/AIResponseDisplay';
+import AIResponseDisplay, { savedAIResult } from '../components/AIResponseDisplay';
 
 const statusColors = {
   active: 'bg-green-100 text-green-800',
@@ -186,7 +186,7 @@ export default function Contracts() {
             <button onClick={handleDelete} className="btn-danger">Delete</button>
             <button onClick={handleAI} className="btn-ai">AI Review Contract</button>
           </div>
-          <AIResponseDisplay data={aiResult} loading={aiLoading} title="AI Contract Review" />
+          <AIResponseDisplay data={aiResult || savedAIResult(selectedItem)} loading={aiLoading} title={aiResult ? 'AI Contract Review' : 'Saved AI Contract Review'} />
         </div>
       )}
 

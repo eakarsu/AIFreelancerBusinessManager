@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import AIResponseDisplay from '../components/AIResponseDisplay';
+import AIResponseDisplay, { savedAIResult } from '../components/AIResponseDisplay';
 
 const statusColors = {
   done: 'bg-green-100 text-green-800',
@@ -211,7 +211,7 @@ export default function Tasks() {
             <button onClick={handleDelete} className="btn-danger">Delete</button>
             <button onClick={handleAIEstimate} className="btn-ai">AI Estimate</button>
           </div>
-          <AIResponseDisplay data={aiResult} loading={aiLoading} title="AI Task Estimation" />
+          <AIResponseDisplay data={aiResult || savedAIResult(selectedItem)} loading={aiLoading} title={aiResult ? 'AI Task Estimation' : 'Saved AI Task Estimation'} />
         </div>
       )}
 

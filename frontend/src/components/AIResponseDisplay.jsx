@@ -36,6 +36,34 @@ function getLevelColor(level) {
   return 'text-red-700 bg-red-50 border-red-200';
 }
 
+const readableLabel = (key) => String(key)
+  .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+  .replace(/[_-]+/g, ' ')
+  .replace(/^./, (letter) => letter.toUpperCase());
+
+export function parseAIValue(value) {
+  if (typeof value === 'string') {
+    const trimmed = value.trim().replace(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i, '$1');
+    if (/^[{[]/.test(trimmed)) {
+      try { return parseAIValue(JSON.parse(trimmed)); } catch { /* Keep provider prose intact. */ }
+    }
+    return value;
+  }
+  if (Array.isArray(value)) return value.map(parseAIValue);
+  if (!value || typeof value !== 'object') return value;
+
+  const providerContent = value.choices?.[0]?.message?.content;
+  if (providerContent !== undefined) return parseAIValue(providerContent);
+
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, parseAIValue(item)]));
+}
+
+export function savedAIResult(record) {
+  if (!record || typeof record !== 'object') return null;
+  const saved = Object.fromEntries(Object.entries(record).filter(([key, value]) => key.startsWith('ai_') && value !== null && value !== undefined && value !== ''));
+  return Object.keys(saved).length ? parseAIValue(saved) : null;
+}
+
 function RenderValue({ value, depth = 0 }) {
   if (value === null || value === undefined) return <span className="text-gray-400">-</span>;
   if (typeof value === 'boolean') return <span className={value ? 'text-emerald-600 font-medium' : 'text-red-600 font-medium'}>{value ? 'Yes' : 'No'}</span>;
@@ -53,12 +81,25 @@ function RenderValue({ value, depth = 0 }) {
     return <span className="text-gray-700">{value}</span>;
   }
   if (Array.isArray(value)) {
+    if (!value.length) return <span className="text-gray-400">None</span>;
+    const tabular = value.every((item) => item && typeof item === 'object' && !Array.isArray(item));
+    if (tabular) {
+      const columns = [...new Set(value.flatMap((item) => Object.keys(item)))];
+      return (
+        <div className="overflow-x-auto mt-2">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50"><tr>{columns.map((key) => <th key={key} className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">{readableLabel(key)}</th>)}</tr></thead>
+            <tbody className="divide-y divide-gray-100">{value.map((item, index) => <tr key={index}>{columns.map((key) => <td key={key} className="px-3 py-2 align-top"><RenderValue value={item[key]} depth={depth + 1} /></td>)}</tr>)}</tbody>
+          </table>
+        </div>
+      );
+    }
     return (
       <ul className="space-y-1.5 mt-1">
         {value.map((item, i) => (
           <li key={i} className="flex items-start gap-2 text-sm">
             <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">{i + 1}</span>
-            <span className="text-gray-700">{typeof item === 'object' ? <RenderValue value={item} depth={depth + 1} /> : item}</span>
+            <span className="text-gray-700"><RenderValue value={item} depth={depth + 1} /></span>
           </li>
         ))}
       </ul>
@@ -70,7 +111,7 @@ function RenderValue({ value, depth = 0 }) {
         {Object.entries(value).map(([k, v]) => (
           <div key={k}>
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              {k.replace(/_/g, ' ')}
+              {readableLabel(k)}
             </span>
             <div className="mt-0.5"><RenderValue value={v} depth={depth + 1} /></div>
           </div>
@@ -105,13 +146,18 @@ export default function AIResponseDisplay({ data, loading, title }) {
 
   if (!data) return null;
 
+  const normalized = parseAIValue(data);
+  const presentation = normalized && typeof normalized === 'object' && !Array.isArray(normalized)
+    ? normalized
+    : { response: normalized };
+
   // Extract key scores for the header
   const scores = {};
   const mainText = {};
   const lists = {};
   const rest = {};
 
-  for (const [key, value] of Object.entries(data)) {
+  for (const [key, value] of Object.entries(presentation)) {
     if (typeof value === 'number' && value >= 0 && value <= 1 && String(value).includes('.')) {
       scores[key] = value;
     } else if (Array.isArray(value)) {
@@ -146,7 +192,7 @@ export default function AIResponseDisplay({ data, loading, title }) {
               {Object.entries(scores).map(([key, value]) => (
                 <div key={key} className={`rounded-lg p-3 text-center ${getScoreColor(value)}`}>
                   <p className="text-2xl font-bold">{Math.round(value * 100)}%</p>
-                  <p className="text-xs font-medium capitalize mt-0.5">{key.replace(/_/g, ' ')}</p>
+                  <p className="text-xs font-medium mt-0.5">{readableLabel(key)}</p>
                 </div>
               ))}
             </div>
@@ -155,7 +201,7 @@ export default function AIResponseDisplay({ data, loading, title }) {
           {/* Main text sections */}
           {Object.entries(mainText).map(([key, value]) => (
             <div key={key} className="bg-white rounded-lg p-4 border border-gray-100">
-              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{key.replace(/_/g, ' ')}</h4>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{readableLabel(key)}</h4>
               <p className="text-gray-700 text-sm leading-relaxed">{value}</p>
             </div>
           ))}
@@ -165,7 +211,7 @@ export default function AIResponseDisplay({ data, loading, title }) {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {Object.entries(rest).map(([key, value]) => (
                 <div key={key} className="bg-white rounded-lg p-3 border border-gray-100">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{key.replace(/_/g, ' ')}</p>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{readableLabel(key)}</p>
                   <div className="text-sm"><RenderValue value={value} /></div>
                 </div>
               ))}
@@ -175,15 +221,8 @@ export default function AIResponseDisplay({ data, loading, title }) {
           {/* Lists */}
           {Object.entries(lists).map(([key, items]) => (
             <div key={key} className="bg-white rounded-lg p-4 border border-gray-100">
-              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{key.replace(/_/g, ' ')}</h4>
-              <ul className="space-y-2">
-                {items.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">{i + 1}</span>
-                    <span className="text-gray-700">{typeof item === 'object' ? <RenderValue value={item} /> : item}</span>
-                  </li>
-                ))}
-              </ul>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{readableLabel(key)}</h4>
+              <RenderValue value={items} />
             </div>
           ))}
         </div>
